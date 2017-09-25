@@ -442,6 +442,7 @@ class MasherThread(threading.Thread):
 
             if not self.skip_mash:
                 self.sanity_check_repo()
+                self.wait_for_repo_signature()
                 self.stage_repo()
 
                 # Wait for the repo to hit the master mirror
@@ -962,6 +963,40 @@ class MasherThread(threading.Thread):
                 raise
 
         return True
+
+    def wait_for_repo_signature(self):
+        """Wait for a repo signature to appear."""
+        notifications.publish(
+            topic="repo.signature.wait",
+            msg=dict(repo=self.id, agent=self.agent, path=self.path),
+            force=True,
+        )
+        if config.get('wait_for_repo_sig'):
+            self.save_state(ComposeState.signing_repo)
+            sigpaths = []
+            repopath = os.path.join(self.path, 'compose', 'Everything')
+            for arch in os.listdir(repopath):
+                if arch == 'source':
+                    sigpaths.append(os.path.join(repopath, arch, 'tree', 'repodata',
+                                                 'repomd.xml.asc'))
+                else:
+                    sigpaths.append(os.path.join(repopath, arch, 'os', 'repodata',
+                                                 'repomd.xml.asc'))
+
+            self.log.info('Waiting for signatures in %s' % sigpaths)
+            while True:
+                got_all = True
+                for path in sigpaths:
+                    if not os.path.exists(path):
+                        got_all = False
+                if got_all:
+                    self.log.info('All signatures were created')
+                    break
+                else:
+                    self.log.info('Waiting')
+                    time.sleep(300)
+        else:
+            self.log.info('Not waiting for a repo signature')
 
     def stage_repo(self):
         """Symlink our updates repository into the staging directory."""

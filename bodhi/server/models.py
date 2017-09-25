@@ -710,6 +710,7 @@ class ComposeState(DeclEnum):
             forms of notifications, such as e-mail, fedmsgs, and bugzilla.
         success (EnumSymbol): The Compose has completed successfully.
         failed (EnumSymbol): The compose has failed, abandon hope.
+        signing_repo (EnumSymbol): Waiting for the repo to be siged.
     """
 
     requested = 'requested', 'Requested'
@@ -720,6 +721,7 @@ class ComposeState(DeclEnum):
     notifying = 'notifying', 'Sending notifications'
     success = 'success', 'Success'
     failed = 'failed', 'Failed'
+    signing_repo = 'signing_repo', 'Signing repo'
 
 
 ##
